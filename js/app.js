@@ -1,6 +1,6 @@
 /* GYMFIT - JS común: peticiones, sesión, logout, contacto */
 
-const API = 'php';
+const API = '/php';
 
 async function api(path, opts = {}){
   const res = await fetch(`${API}/${path}`, {
@@ -24,25 +24,22 @@ async function getMe(){
 
 async function logout(){
   try { await api('logout.php', { method:'POST' }); } catch(e){}
-  location.href = 'login.html';
+  location.href = '/login.html';
 }
 
-// Redirigir según rol
 function redirectByRole(user){
-  if (!user) { location.href = 'login.html'; return; }
-  if (user.rol === 'entrenador') location.href = 'panel-entrenador.html';
-  else location.href = 'panel-cliente.html';
+  if (!user) { location.href = '/login.html'; return; }
+  if (user.rol === 'entrenador') location.href = '/panel-entrenador.html';
+  else location.href = '/panel-cliente.html';
 }
 
-// Guard de páginas privadas
 async function requireRole(rol){
   const u = await getMe();
-  if (!u) { location.href = 'login.html'; return null; }
+  if (!u) { location.href = '/login.html'; return null; }
   if (u.rol !== rol) { redirectByRole(u); return null; }
   return u;
 }
 
-// Toast simple Bootstrap
 function toast(msg, type='success'){
   const id = 'gf-toast-'+Date.now();
   const html = `
@@ -59,7 +56,6 @@ function toast(msg, type='success'){
   el.addEventListener('hidden.bs.toast', () => el.remove());
 }
 
-// Wire del formulario de contacto (solo si existe)
 document.addEventListener('DOMContentLoaded', () => {
   const f = document.getElementById('formContacto');
   if (f) f.addEventListener('submit', async (e) => {

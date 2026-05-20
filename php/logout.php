@@ -1,5 +1,10 @@
 <?php
+
+declare(strict_types=1);
+
 require __DIR__ . '/config.php';
-$_SESSION = [];
-session_destroy();
-json_response(['ok' => true]);
+
+use App\Controllers\AuthController;
+
+$ctrl = new AuthController();
+$ctrl->logout();

@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Estadísticas del Gimnasio - GYMFIT</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body class="app-bg">
+<div class="dash">
+  <aside class="dash-side">
+    <div class="brand"><a class="gf-logo" href="../index.html">GYM<span>FIT</span></a></div>
+    <ul class="menu">
+      <li><a href="../panel-entrenador.html"><i class="bi bi-people-fill"></i> Clientes</a></li>
+      <li><a href="clientes.html"><i class="bi bi-graph-up"></i> Progreso</a></li>
+      <li><a class="active" href="gym.html"><i class="bi bi-bar-chart"></i> Estadísticas</a></li>
+    </ul>
+    <div class="logout"><a href="#" onclick="logout();return false;"><i class="bi bi-box-arrow-left"></i> Cerrar sesión</a></div>
+  </aside>
+
+  <main class="dash-main">
+    <div class="d-flex justify-content-between align-items-start mb-4">
+      <div>
+        <h3 class="fw-bold mb-1">Estadísticas del Gimnasio</h3>
+        <small class="text-secondary">Métricas generales y distribución de miembros</small>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-md-3">
+        <div class="gf-card text-center">
+          <h2 class="gf-red fw-bold" id="totalEntrenadores">0</h2>
+          <small class="text-secondary">Entrenadores</small>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="gf-card text-center">
+          <h2 class="gf-red fw-bold" id="totalClientes">0</h2>
+          <small class="text-secondary">Clientes</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-6">
+        <div class="gf-card">
+          <h6 class="fw-bold mb-3">Crecimiento de miembros</h6>
+          <canvas id="chartCrecimiento" height="220"></canvas>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="gf-card">
+          <h6 class="fw-bold mb-3">Rutinas por mes</h6>
+          <canvas id="chartRutinasMes" height="220"></canvas>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="gf-card">
+          <h6 class="fw-bold mb-3">Distribución por objetivo</h6>
+          <canvas id="chartObjetivo" height="220"></canvas>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="gf-card">
+          <h6 class="fw-bold mb-3">Distribución por nivel</h6>
+          <canvas id="chartNivel" height="220"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="gf-card mt-4">
+      <h6 class="fw-bold mb-3">Clientes por entrenador</h6>
+      <div class="table-responsive">
+        <table class="table table-dark table-striped table-sm mb-0">
+          <thead>
+            <tr>
+              <th>Entrenador</th>
+              <th class="text-center">Clientes</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyEntrenadores"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/app.js"></script>
+<script>
+(async () => {
+  const u = await requireRole('entrenador');
+  if (!u) return;
+
+  try {
+    const d = await api('reportes.php?tipo=gimnasio');
+
+    document.getElementById('totalEntrenadores').textContent = d.total_entrenadores;
+    document.getElementById('totalClientes').textContent = d.total_clientes;
+
+    // Crecimiento de miembros
+    new Chart(document.getElementById('chartCrecimiento'), {
+      type: 'line',
+      data: {
+        labels: d.usuarios_por_mes.map(x => x.mes),
+        datasets: [{
+          label: 'Nuevos miembros',
+          data: d.usuarios_por_mes.map(x => x.total),
+          borderColor: '#e63946',
+          backgroundColor: 'rgba(230,57,70,0.1)',
+          fill: true,
+          tension: 0.3,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: '#ccc' } } },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1 } },
+          x: { grid: { display: false } },
+        }
+      }
+    });
+
+    // Rutinas por mes
+    new Chart(document.getElementById('chartRutinasMes'), {
+      type: 'bar',
+      data: {
+        labels: d.rutinas_por_mes.map(x => x.mes),
+        datasets: [{
+          label: 'Rutinas',
+          data: d.rutinas_por_mes.map(x => x.total),
+          backgroundColor: '#c1121f',
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: '#ccc' } } },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1 } },
+          x: { grid: { display: false } },
+        }
+      }
+    });
+
+    // Distribución por objetivo
+    new Chart(document.getElementById('chartObjetivo'), {
+      type: 'pie',
+      data: {
+        labels: d.usuarios_por_objetivo.map(x => x.objetivo),
+        datasets: [{
+          data: d.usuarios_por_objetivo.map(x => x.total),
+          backgroundColor: ['#e63946', '#c1121f', '#ff5a66', '#9a031e', '#f0717a', '#d62828'],
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: '#ccc', boxWidth: 12 } }
+        }
+      }
+    });
+
+    // Distribución por nivel
+    new Chart(document.getElementById('chartNivel'), {
+      type: 'doughnut',
+      data: {
+        labels: d.usuarios_por_nivel.map(x => x.nivel),
+        datasets: [{
+          data: d.usuarios_por_nivel.map(x => x.total),
+          backgroundColor: ['#e63946', '#c1121f', '#ff5a66', '#9a031e'],
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: '#ccc', boxWidth: 12 } }
+        }
+      }
+    });
+
+    // Tabla de clientes por entrenador
+    const tbody = document.getElementById('tbodyEntrenadores');
+    d.clientes_por_entrenador.forEach(e => {
+      if (e.total > 0) {
+        tbody.innerHTML += `<tr><td>${e.nombre}</td><td class="text-center">${e.total}</td></tr>`;
+      }
+    });
+  } catch (e) { toast(e.message, 'error'); }
+})();
+</script>
+</body>
+</html>
